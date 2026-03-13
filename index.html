@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Agent - ZEEMLESS Projekt Initiation</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="light-theme">
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="brand">
+                <i class="fa-solid fa-layer-group logo-icon zeemless-logo"></i>
+                <h1>ZEEMLESS <span>by greybee</span></h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="qrButton">
+                    <i class="fa-solid fa-qrcode"></i> Switch to Mobile
+                </button>
+                <div class="session-badge">Session: #99Z-DT</div>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Tobias+M&background=0284c7&color=fff" alt="User">
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <main class="main-layout">
+            
+            <!-- LEFT PANEL: CHAT / VOICE -->
+            <section class="chat-panel">
+                <div class="chat-header">
+                    <h2><i class="fa-solid fa-microphone-lines"></i> Voice Initiation Agent</h2>
+                    <div class="voice-status pulse">Zuhören...</div>
+                </div>
+
+                <div class="chat-history" id="chatHistory">
+                    
+                    <!-- Context Loaded Notification -->
+                    <div class="context-tag-wrapper">
+                        <span class="context-tag"><i class="fa-solid fa-database"></i> Externer Kontext für 'Deutsche Telekom' geladen (Telco, SAP ERP, 200k+ MA)</span>
+                    </div>
+
+                    <div class="message ai-message">
+                        <div class="message-content">
+                            Hallo! Ich sehe, wir legen ein Projekt für die Deutsche Telekom an. Sollen wir direkt mit den spezifischen ERP-Parametern starten?
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Voice wave indicator -->
+                <div class="voice-indicator">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                </div>
+
+                <!-- Input Area (Fallback for text & Quick Replies) -->
+                <div class="input-area">
+                    <div class="quick-replies" id="quickReplies">
+                        <button class="chip">Ja, lass uns starten</button>
+                        <button class="chip">Eher allgemeine Daten zuerst</button>
+                    </div>
+                    <div class="text-input-wrapper">
+                        <button class="btn-voice active" title="Voice Input aktivieren"><i class="fa-solid fa-microphone"></i></button>
+                        <input type="text" placeholder="Antwort tippen oder sprechen..." id="textInput" />
+                        <button class="btn-send" title="Nachricht absenden"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: LIVE PROJECT DATA -->
+            <section class="data-panel">
+                <div class="data-header">
+                    <h2><i class="fa-solid fa-clipboard-check"></i> Parameter Live-View</h2>
+                    <span class="completion-badge" id="completionBadge">10% Erfasst</span>
+                </div>
+
+                <div class="data-content">
+                    
+                    <!-- Core Data -->
+                    <div class="data-section">
+                        <h3>1. Basis Daten <span class="context-tag">Via GUI gesetzt</span></h3>
+                        <div class="field-list">
+                            <div class="field-item status-green">
+                                <div class="field-icon"><i class="fa-solid fa-check"></i></div>
+                                <div class="field-info">
+                                    <span class="field-label">Mandant</span>
+                                    <span class="field-value">Deutsche Telekom AG</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Voice Extracted Data -->
+                    <div class="data-section mt-4">
+                        <h3>2. ERP Migrations-Parameter <span class="context-tag">Voice Agent aktiv</span></h3>
+                        <div class="field-list">
+                            
+                            <!-- Yellow: Missing / Current Focus -->
+                            <div class="field-item status-yellow active-field" id="field-ansatz">
+                                <div class="field-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+                                <div class="field-info">
+                                    <span class="field-label">Migrations-Ansatz</span>
+                                    <span class="field-value empty">Wird erfragt...</span>
+                                    <span class="field-subtext">Greenfield, Brownfield, Bluefield?</span>
+                                </div>
+                            </div>
+
+                            <!-- Gray: Missing / Future -->
+                            <div class="field-item status-gray" id="field-system">
+                                <div class="field-icon"><i class="fa-regular fa-circle"></i></div>
+                                <div class="field-info">
+                                    <span class="field-label">Betroffene Systeme</span>
+                                    <span class="field-value empty">Ausstehend</span>
+                                    <span class="field-subtext">z.B. SAP R/3, S/4HANA</span>
+                                </div>
+                            </div>
+
+                            <!-- Gray: Missing / Future -->
+                            <div class="field-item status-gray" id="field-rules">
+                                <div class="field-icon"><i class="fa-regular fa-circle"></i></div>
+                                <div class="field-info">
+                                    <span class="field-label">Sonderregeln (Cutover)</span>
+                                    <span class="field-value empty">Ausstehend</span>
+                                    <span class="field-subtext">Autosupplisten, Carve-Outs...</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Voice Extracted Data - Implicit Checklist -->
+                    <div class="data-section mt-4">
+                        <h3>3. Implizit Erfasste Parameter <span class="context-tag">Auto-Filled</span></h3>
+                        <p class="implicit-description">Diese Felder füllt die KI automatisch aus dem Gesprächskontext aus, ohne explizit danach zu fragen.</p>
+                        <div class="field-list implicit-grid">
+                            
+                            <!-- Small toggle style displays -->
+                            <div class="field-item status-gray implicit-item" id="implicit-cloud">
+                                <div class="field-icon implicit-icon"><i class="fa-solid fa-cloud"></i></div>
+                                <div class="field-info">
+                                    <span class="field-label implicit-label">Cloud-Nutzung</span>
+                                </div>
+                            </div>
+                            
+                            <div class="field-item status-gray implicit-item" id="implicit-privacy">
+                                <div class="field-icon implicit-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                                <div class="field-info">
+                                    <span class="field-label implicit-label">Datenschutz Relevanz</span>
+                                </div>
+                            </div>
+                            
+                            <div class="field-item status-gray implicit-item" id="implicit-migration">
+                                <div class="field-icon implicit-icon"><i class="fa-solid fa-database"></i></div>
+                                <div class="field-info">
+                                    <span class="field-label implicit-label">Datenmodell-Migration</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Phase 4: Liefergegenstände -->
+                    <div class="data-section mt-4">
+                        <h3>4. Liefergegenstände (Quality Gates) <span class="context-tag">Auto-Generiert</span></h3>
+                        <div class="field-list">
+                            <div class="field-item status-gray locked">
+                                <div class="field-icon"><i class="fa-solid fa-lock"></i></div>
+                                <div class="field-info">
+                                    <span class="field-label">Setup-Karte Obermigration</span>
+                                    <span class="field-value empty">Gesperrt</span>
+                                    <span class="field-subtext">Wird basierend auf Parameter 2 erstellt</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="data-footer">
+                    <button class="btn btn-primary" disabled id="generatePlanBtn">
+                        <i class="fa-solid fa-layer-group"></i> ZEEMLESS Projektplan erzeugen
+                    </button>
+                </div>
+            </section>
+        </main>
+        
+        <!-- QR Modal -->
+        <div class="modal-overlay" id="qrModal">
+            <div class="modal">
+                <button class="close-modal" id="closeQr" title="Schließen"><i class="fa-solid fa-xmark"></i></button>
+                <h2>Weiter auf dem Smartphone</h2>
+                <p>Scannen Sie den Barcode, um das Interview auf dem Handy über Kamera/Mikrofon fortzusetzen. Die Desktop-Ansicht bleibt synchronisiert.</p>
+                <div class="qr-placeholder">
+                    <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <div class="modal-footer">
+                    <code>https://zeemless.app/voice?session=99Z-DT</code>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

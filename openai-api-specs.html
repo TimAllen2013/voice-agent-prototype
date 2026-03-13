@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI API Spezifikationen - ZEEMLESS</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 40px; background-color: var(--bg-light); color: var(--text-dark); }
+        .container { max-width: 1000px; margin: 0 auto; background: var(--bg-card); padding: 40px; border-radius: var(--border-radius); box-shadow: var(--shadow-md); border: 1px solid var(--border-light); }
+        h1 { font-weight: 700; font-size: 28px; margin-bottom: 20px; color: var(--text-dark); }
+        h2 { font-weight: 600; font-size: 22px; margin-top: 40px; margin-bottom: 15px; border-bottom: 2px solid var(--border-light); padding-bottom: 10px; }
+        h3 { font-weight: 600; font-size: 18px; margin-top: 25px; margin-bottom: 10px; color: var(--zeemless-blue); }
+        p, li { line-height: 1.6; color: var(--text-base); }
+        ul { margin-left: 20px; margin-bottom: 20px; }
+        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .spec-card { background: var(--bg-light); padding: 20px; border-radius: var(--border-radius); border: 1px solid var(--border-light); }
+        .spec-card h4 { color: var(--zeemless-blue); margin-top: 0; font-size: 16px; margin-bottom: 10px; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: var(--zeemless-blue); text-decoration: none; font-weight: 500; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="start.html" class="back-link">← Zurück zum Start</a>
+    
+    <h1>OpenAI Schnittstellen-Spezifikationen</h1>
+    <p>Übersicht der technologischen Möglichkeiten und Integrationen der neuesten OpenAI Modelle im Kontext des ZEEMLESS Voice & Chat Interfaces für komplexe Projektplanungen.</p>
+
+    <!-- REALTIME & VOICE -->
+    <h2>Voice & Multimodale Interaktion</h2>
+    <div class="card-grid">
+        <div class="spec-card">
+            <h4>Realtime API (WebRTC)</h4>
+            <p>Ermöglicht Low-Latency, bidirektionale Sprachkommunikation in Echtzeit. Ideal für flüssige Interview-Prozesse per Smartphone oder Browser-App (Barcode Scan -> Web App öffnen).</p>
+            <ul>
+                <li>Unterstützung für Text und Audio via WebSocket oder WebRTC Protokoll.</li>
+                <li>Geringe Latenz: Natürliches Gesprächsgefühl ohne störende Verzögerungen.</li>
+                <li>Voice Activity Detection (VAD) zur automatischen Sprecherkennung.</li>
+            </ul>
+        </div>
+        <div class="spec-card">
+            <h4>GPT-4o (Omni) Modelle</h4>
+            <p>Nativ multimodale Modelle (z.B. <code>gpt-4o</code> oder <code>gpt-4o-realtime-preview</code>), die direkt Sprache zu Spracheingabe/-ausgabe verarbeiten, ohne separate Speech-to-Text-Zwischenschritte.</p>
+            <ul>
+                <li>Besseres Verständnis von Betonung, Dialekten und Unterbrechungen.</li>
+                <li>Schnellere Audio-Generierung als kaskadierte Systeme (Whisper + TTS).</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- MCP & FUNCTION CALLING -->
+    <h2>Datenintegration & Logik (Model Context Protocol)</h2>
+    <div class="card-grid">
+        <div class="spec-card">
+            <h4>Function Calling & Tools</h4>
+            <p>Das Modell kann definiert Tools trigger, um Aktionen in der UI auszuführen oder Datenbanken abzufragen. Dies ist das Herzstück zur Aktualisierung der UI (Links Chat, rechts farbige Daten-Panel).</p>
+            <ul>
+                <li><strong>State-Updates:</strong> Trigger-Events, um Felder in der UI von "Unbeantwortet (Gelb)" auf "Beantwortet (Grün)" zu setzen.</li>
+                <li><strong>MCP-Bridge:</strong> Aufruf des sicheren Model Context Protocol Servers.</li>
+            </ul>
+        </div>
+        <div class="spec-card">
+            <h4>Structured Outputs (JSON Mode)</h4>
+            <p>Erzwingt vom Sprachmodell eine strikte JSON-Strukturübereinstimmung basierend auf einem JSON-Schema. Garantiert, dass die Plattform die Antworten fehlerfrei verarbeiten und speichern kann.</p>
+            <ul>
+                <li>Strikte Einhaltung von Datentypen (Strings, Integers, Arrays).</li>
+                <li>Ideal zum Sammeln der Parameter (Branchen, Systeme, Migrationstyp).</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECURITY & PRIVACY -->
+    <h2>Verschlüsselung, Datenschutz & Sicherheit</h2>
+    <p>Der Schutz hochsensibler Unternehmensdaten (wie SAP-Cutover Details der Deutschen Telekom) steht an oberster Stelle.</p>
+    
+    <div class="card-grid">
+        <div class="spec-card">
+            <h4>Zero Data Retention (ZDR)</h4>
+            <p>Für Enterprise-Kunden kann ZDR aktiviert werden. OpenAI speichert die API-Anfragen (Prompts) und Antworten (Audio/Text) nicht ab und verwendet diese nicht für das Modell-Training (standardmäßig für API-Nutzer deaktiviert).</p>
+        </div>
+        <div class="spec-card">
+            <h4>End-to-End Encryption (TLS)</h4>
+            <p>Alle Daten-Transits (Audio-Streams, MCP WebSockets, REST-Abfragen) erfolgen über TLS 1.2+ oder DTLS-SRTP (im Falle von WebRTC). Damit sind Metadaten und Nutzdaten vor Man-in-the-Middle geschützt.</p>
+        </div>
+        <div class="spec-card">
+            <h4>Ephemeral Tokens (WebRTC)</h4>
+            <p>Im Web-App Szenario generiert das ZEEMLESS Backend ein kurzlebiges, signiertes Token, anstatt den direkten API-Key in den Client zu laden. Über dieses Token verbindet sich die Browser/Mobile-App sicher mit OpenAI.</p>
+        </div>
+        <div class="spec-card">
+            <h4>Private Link / VPC Peering</h4>
+            <p>Für streng regulierte Umgebungen können Azure OpenAI Instanzen in einem privaten virtuellen Netzwerk (VNet) betrieben werden, um den externen Internet-Traffic vollständig zu umgehen.</p>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

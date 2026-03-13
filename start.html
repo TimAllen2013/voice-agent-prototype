@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZEEMLESS - Projekt Initiierung</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="light-theme">
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="brand">
+                <i class="fa-solid fa-layer-group logo-icon zeemless-logo"></i>
+                <h1>ZEEMLESS <span>by greybee</span></h1>
+            </div>
+            <div class="header-actions">
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Tobias+M&background=0D8ABC&color=fff" alt="User">
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <main class="dashboard-layout">
+            <div class="welcome-section">
+                <h2>Neues Transformations-Projekt anlegen</h2>
+                <p>Nutzen Sie die ZEEMLESS Methodik, um erfolgskritische Strukturen vorab zu konfigurieren.</p>
+            </div>
+
+            <div class="client-selection-grid">
+                
+                <div class="client-card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-building-columns icon-ba"></i>
+                    </div>
+                    <div class="card-body">
+                        <h3>Bundesagentur für Arbeit</h3>
+                        <p>Transformation Core / IT Infrastruktur</p>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-outline" onclick="window.location.href='index.html?client=ba'">Manuell erfassen</button>
+                        <button class="btn btn-primary" onclick="window.location.href='index.html?client=ba&mode=voice'">
+                            <i class="fa-solid fa-microphone"></i> Voice Agent
+                        </button>
+                    </div>
+                </div>
+
+                <div class="client-card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-signal icon-dt"></i>
+                    </div>
+                    <div class="card-body">
+                        <h3>Deutsche Telekom</h3>
+                        <p>SAP ERP Carve-out / Migration</p>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-outline" onclick="window.location.href='index.html?client=dt'">Manuell erfassen</button>
+                        <button class="btn btn-primary" onclick="window.location.href='index.html?client=dt&mode=voice'">
+                            <i class="fa-solid fa-microphone"></i> Voice Agent
+                        </button>
+                    </div>
+                </div>
+
+
+                <div class="client-card new-client">
+                    <i class="fa-solid fa-plus"></i>
+                    <h3>Neuer Mandant</h3>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</body>
+</html>

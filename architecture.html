@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentenstruktur & MCP Architektur - ZEEMLESS</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 40px; background-color: var(--bg-light); color: var(--text-dark); }
+        .container { max-width: 1000px; margin: 0 auto; background: var(--bg-card); padding: 40px; border-radius: var(--border-radius); box-shadow: var(--shadow-md); border: 1px solid var(--border-light); }
+        h1 { font-weight: 700; font-size: 28px; margin-bottom: 20px; color: var(--text-dark); }
+        h2 { font-weight: 600; font-size: 22px; margin-top: 40px; margin-bottom: 15px; border-bottom: 2px solid var(--border-light); padding-bottom: 10px; }
+        h3 { font-weight: 600; font-size: 18px; margin-top: 20px; margin-bottom: 10px; color: var(--zeemless-blue); }
+        p, li { line-height: 1.6; color: var(--text-base); }
+        ul { margin-left: 20px; margin-bottom: 20px; }
+        .mermaid { background: transparent; padding: 20px 0; display: flex; justify-content: center; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: var(--zeemless-blue); text-decoration: none; font-weight: 500; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="start.html" class="back-link">← Zurück zum Start</a>
+    
+    <h1>Agentenstruktur & MCP Architektur</h1>
+    <p>Diese Dokumentation visualisiert die Architektur des Voice-basierten Planungsagenten, insbesondere im Kontext von komplexen Enterprise-Szenarien (z.B. SAP ERP Cutover bei der Deutschen Telekom).</p>
+
+    <!-- MERMAID DIAGRAM -->
+    <h2>Architektur-Diagramm (Mermaid)</h2>
+    <div class="mermaid">
+        graph TD
+            subgraph FrontendUI[Frontend Web/Mobile App - ZEEMLESS UI]
+                UI[Nutzer Interface Barcode/Web]
+                Voice[Voice Interface / WebRTC]
+                Chat[Text Chatbot View]
+                Panel[Data Panel Fragen u UI States]
+            end
+
+            subgraph OpenAILayer[OpenAI / LLM Layer]
+                LLM((OpenAI Realtime API u Function Calling))
+                Context[Kontextfenster u Instruktionen]
+            end
+
+            subgraph ZeemlessBackend[Zeemless Backend u Middleware]
+                Router{Intent u Tool Router}
+                State[Session State / Progress Tracker]
+            end
+
+            subgraph MCPServer[MCP Server Datenanbindung]
+                MCP_Internal[Internal Data Server Rigide Plaene]
+                MCP_External[External Context Server Kunde/News]
+                MCP_Write[Persistence Server Projektdatenbank]
+            end
+            
+            subgraph Datenbanken[Datenbanken / Backend]
+                DB_Blueprints[(Projekt-Templates u Deliverables)]
+                DB_Projects[(Live Projektdaten)]
+                API_Web[(Web/Branchendaten)]
+            end
+
+            %% Data Flow
+            UI <--> Router
+            Voice <--> LLM
+            Chat <--> Router
+            Panel <--> Router
+            
+            Router <--> LLM
+            Router <--> State
+            
+            LLM -->|Tool Calls| MCP_Internal
+            LLM -->|Tool Calls| MCP_External
+            LLM -->|Tool Calls| MCP_Write
+            
+            MCP_Internal <--> DB_Blueprints
+            MCP_Write <--> DB_Projects
+            MCP_External <--> API_Web
+
+            %% Styling
+            classDef default fill:#f9fafb,stroke:#d1d5db,stroke-width:1px,color:#1f2937;
+            classDef ai fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a;
+            classDef mcp fill:#fdf4ff,stroke:#d946ef,stroke-width:2px,color:#701a75;
+            classDef db fill:#f0fdf4,stroke:#22c55e,stroke-width:1px,color:#14532d;
+            
+            class LLM ai;
+            class MCP_Internal,MCP_External,MCP_Write mcp;
+            class DB_Blueprints,DB_Projects,API_Web db;
+    </div>
+
+    <h2>Agentenlogik: Was muss der Planungsbot wissen?</h2>
+    <p>Damit der Bot effektiv durch ein Interview leiten kann (wie beim SAP-Cutover-Projekt der Deutschen Telekom), muss er zwischen internen (rigiden) und externen (dynamischen) Informationen unterscheiden.</p>
+
+    <h3>1. Externe Kontext-Daten (via MCP_External)</h3>
+    <ul>
+        <li><strong>Kunde & Branche:</strong> Informationen über die Deutsche Telekom, regulatorische Anforderungen, Größe und Marktposition.</li>
+        <li><strong>Technologie-Trends:</strong> Best Practices für SAP S/4HANA Migrationen.</li>
+        <li><strong>Projektansatz:</strong> Vorwissen über Brownfield (System-Konvertierung) vs. Greenfield (Neu-Implementierung), Selective Data Transition.</li>
+    </ul>
+
+    <h3>2. Interne Plattform-Daten (via MCP_Internal)</h3>
+    <ul>
+        <li><strong>Deliverables (Liefergegenstände):</strong> Eine vordefinierte Liste, was intern vs. extern auszuführen ist (z.B. wer macht das Testing, wer die technische Datenmigration?).</li>
+        <li><strong>Setup-Karten & Quality Gates:</strong> Spezifische Phasen der Migration (z.B. Mock-Cutover, Dress Rehearsal, Go-Live Wochenende) und deren strikte Abnahmekriterien.</li>
+        <li><strong>Systemarchitektur-Blueprints:</strong> Wissen darüber, wie ERP-Systeme mit Subsystemen verzahnt sind (CRM, HR, Billing), um Abhängigkeiten abzufragen ("Sollen diese Systeme getrennt werden?").</li>
+    </ul>
+
+    <h3>3. Dynamische Interview-Steuerung (Event Loop)</h3>
+    <p>Der Agent folgt einem iterativen Loop:</p>
+    <ol>
+        <li><strong>Erheben:</strong> Fragen nach noch fehlenden Parametern stellen (z.B. "Wie viele historische Datenjahre sollen migriert werden?").</li>
+        <li><strong>Auswerten:</strong> Antwort mittels Function Calling in JSON parsen und im rechten Fenster der Web-App gelb -> grün schalten.</li>
+        <li><strong>Kontext-Abgleich:</strong> Prüfen, ob durch die neue Antwort ein weiterer Zweig im Projektplan aktiviert wird (z.B. "Wenn Cloud-Migration gewählt, frage nach Hyperscaler").</li>
+        <li><strong>Speichern (via MCP_Write):</strong> Sobald das Interview beendet ist, wird der fertige Parameter-Satz in die Datenbank zur finalen Planerstellung geschrieben.</li>
+    </ol>
+
+    <h3>4. Dynamic & Implicit Voice Extraction (Neu)</h3>
+    <p>Eine Kerninnovation der ZEEMLESS Systemarchitektur ist die Fähigkeit des Agents, aus einem einzelnen Redebeitrag auf mehrere Projektvariablen zu schließen, um die Interaktionszeit für komplexe Erfassungen drastisch zu verkürzen.</p>
+    <ul>
+        <li><strong>Explizite Extraktion:</strong> Der Bot stellt eine direkte Frage (z.B. "Target System?") und der Nutzer antwortet direkt. Das dedizierte Feld wird befüllt.</li>
+        <li><strong>Implizite Extraktion (Dynamic Mapping):</strong> Der Nutzer erwähnt beiläufig Kontext, z.B. "Wir migrieren auf S/4HANA in die AWS Cloud". Das System identifiziert nicht nur das Zielsystem, sondern setzt im gleichen Schritt automatisch implizite JSON-Flags für "Cloud-Nutzung", "Datenschutz-Relevanz" und "Datenmodell-Migration" auf <code>true</code>, da diese durch "AWS" und "S/4HANA" bedingt sind.</li>
+        <li><strong>UX Auswirkung:</strong> Durch die implizite Extraktion überspringt der Router nachgelagerte Fragen, für die die Antworten bereits inferiert wurden. Die UI signalisiert dies durch grüne Checkmarks in der Sektion "Implizit Erfasste Parameter".</li>
+    </ul>
+</div>
+
+<!-- Mermaid JS -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: {
+        primaryColor: '#f9fafb',
+        primaryBorderColor: '#d1d5db',
+        primaryTextColor: '#1f2937',
+        lineColor: '#6b7280',
+        fontFamily: 'Inter, sans-serif'
+    } });
+</script>
+
+</body>
+</html>
