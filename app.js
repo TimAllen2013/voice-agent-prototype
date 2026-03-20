@@ -38,22 +38,193 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const textInput = document.getElementById('textInput');
     const sendBtn = document.querySelector('.btn-send');
+    const voiceBtn = document.querySelector('.btn-voice');
     const chatHistory = document.getElementById('chatHistory');
     
-    let conversationStep = 0;
+    // Realtime API connection properties
+    let pc = null;
+    let dc = null;
+    let audioEl = document.createElement("audio");
+    audioEl.autoplay = true;
+    document.body.appendChild(audioEl);
 
-    // Simulate MCP fetching external context BEFORE the actual chat starts
-    setTimeout(() => simulateMCPContextFetch(), 1500);
+    // Initial State Setup
+    setTimeout(() => initContextFetch(), 1500);
 
-    function simulateMCPContextFetch() {
-        // Pre-fill some state based on "database / news"
+    function initContextFetch() {
         projectState.context_loaded = true;
-        
         const contextTag = document.querySelector('.context-tag');
         if(contextTag) contextTag.innerHTML = `<i class="fa-solid fa-database"></i> Externer MCP-Kontext für '${projectState.client}' geladen (Telco, SAP ERP, 200k+ MA)`;
         
-        // Let AI speak
-        addAiMessage(`Hallo! Ich habe den externen Kontext für ${projectState.client} geladen. Meinen Daten zufolge steht dort oft eine Migation von SAP R/3 auf S/4HANA an. Sollen wir direkt mit den spezifischen ERP-Parametern starten?`, ['Ja, lass uns starten', 'Worum geht es genau?']);
+        // Wait for user to initiate voice
+        addAiMessage(`Hallo! Ich habe den externen Kontext für ${projectState.client} geladen. Klicken Sie auf das Mikrofon, um das Voice-Interview zu starten.`, []);
+    }
+
+    async function toggleVoiceConnection() {
+        if (pc) {
+            disconnectVoice();
+        } else {
+            await connectVoice();
+        }
+    }
+
+    async function connectVoice() {
+        try {
+            voiceBtn.classList.add('pulse');
+            voiceBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            // 1. Get Ephemeral Token from our Node Backend
+            const tokenRes = await fetch('/api/realtime/token');
+            if (!tokenRes.ok) throw new Error("Could not fetch ephemeral token");
+            const data = await tokenRes.json();
+            
+            const EPHEMERAL_KEY = data.token;
+            const baseUrl = data.endpoint;
+
+            // 2. Setup RTCPeerConnection
+            pc = new RTCPeerConnection();
+
+            pc.ontrack = e => {
+                audioEl.srcObject = e.streams[0];
+            };
+
+            // 3. Setup Data Channel for events / tool calling
+            dc = pc.createDataChannel("oai-events");
+            
+            dc.onopen = () => {
+                console.log("DataChannel opened!");
+                // Configure instructions and tools
+                const sessionUpdate = {
+                    type: "session.update",
+                    session: {
+                        instructions: `You are the ZEEMLESS Voice Initiation Agent. You help users set up SAP ERP Cutover projects.
+Your goal is to extract project parameters through conversation. 
+Current Client: ${projectState.client}.
+Identify both EXPLICIT and IMPLICIT data points from the user. 
+Call the 'update_field' tool whenever you identify a parameter.
+Available fields:
+- ansatz (Greenfield, Brownfield, Bluefield)
+- system (SAP R/3, S/4HANA, etc.)
+- rules (Cutover rules)
+- cloud (Boolean: Cloud migration?)
+- privacy (Boolean: Data privacy relevant?)
+- migration (Boolean: Complex data migration?)`,
+                        tools: [{
+                            type: "function",
+                            name: "update_field",
+                            description: "Updates a project field based on user input",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    field_name: { type: "string", description: "The internal key of the field (ansatz, system, rules, cloud, privacy, migration)" },
+                                    value: { type: "string", description: "The value detected (e.g. 'Greenfield', 'true', 'SAP S/4HANA')" }
+                                },
+                                required: ["field_name", "value"]
+                            }
+                        }],
+                        tool_choice: "auto"
+                    }
+                };
+                dc.send(JSON.stringify(sessionUpdate));
+                
+                voiceBtn.classList.remove('pulse');
+                voiceBtn.classList.add('live');
+                voiceBtn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+                document.querySelector('.voice-status').innerText = "Live Recording...";
+
+                // Start the conversation proactively
+                dc.send(JSON.stringify({
+                    type: "response.create",
+                    response: {
+                        instructions: "Genaue Anweisung: Begrüße den Nutzer freundlich zum ERP Cutover Projekt für die Deutsche Telekom und frage direkt nach dem geplanten Migrations-Ansatz (Greenfield oder Brownfield)."
+                    }
+                }));
+            };
+
+            dc.onmessage = handleRealtimeEvent;
+
+            // 4. Capture Microphone
+            const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
+            ms.getTracks().forEach(track => pc.addTrack(track, ms));
+
+            // 5. Connect to Azure OpenAI Realtime Endpoint via WebRTC SDP Offer/Answer
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            // Using api-version=2025-04-01-preview for WebRTC SDP endpoint on Azure
+            const sdpResponse = await fetch(`${baseUrl}/openai/v1/realtime?api-version=2025-04-01-preview&deployment=${data.deployment}`, {
+                method: "POST",
+                body: offer.sdp,
+                headers: {
+                    "Authorization": `Bearer ${EPHEMERAL_KEY}`, // Using token we got from backend
+                    "Content-Type": "application/sdp"
+                }
+            });
+
+            if (!sdpResponse.ok) throw new Error("SDP Answer fetch failed");
+            
+            const answerSdp = await sdpResponse.text();
+            await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+
+        } catch (err) {
+            console.error(err);
+            addAiMessage("Verbindung zur Realtime API fehlgeschlagen. Prüfe Logs.", []);
+            disconnectVoice();
+        }
+    }
+
+    function disconnectVoice() {
+        if (pc) {
+            pc.close();
+            pc = null;
+        }
+        if (dc) {
+            dc.close();
+            dc = null;
+        }
+        voiceBtn.classList.remove('live', 'pulse');
+        voiceBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+        document.querySelector('.voice-status').innerText = "Zuhören...";
+    }
+
+    function handleRealtimeEvent(e) {
+        const msg = JSON.parse(e.data);
+        
+        switch (msg.type) {
+            case "response.audio_transcript.done":
+                // AI finished speaking
+                addAiMessage(msg.transcript, []);
+                break;
+            case "conversation.item.input_audio_transcription.completed":
+                // Display what the user just said
+                addUserMessage(msg.transcript);
+                break;
+            case "response.function_call_arguments.done":
+                // AI called our tool
+                if (msg.name === "update_field") {
+                    try {
+                        const args = JSON.parse(msg.arguments);
+                        applyFieldUpdate(args.field_name, args.value);
+                    } catch (err) {
+                        console.error("Failed to parse function args:", err);
+                    }
+                }
+                break;
+        }
+    }
+
+    function applyFieldUpdate(key, value) {
+        if (projectState.fields[key]) {
+            updateUIState(key, value);
+        } else if (projectState.implicit[key]) {
+            updateImplicitState(key);
+        }
+        updateDynamicProgress();
+    }
+
+    // Bind voice button
+    if(voiceBtn) {
+        voiceBtn.addEventListener('click', toggleVoiceConnection);
     }
 
     function addUserMessage(text) {
@@ -63,13 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chatHistory.appendChild(msg);
         chatHistory.scrollTop = chatHistory.scrollHeight;
         if(textInput) textInput.value = '';
-        
-        // Disable input during AI processing
-        if(textInput) textInput.disabled = true;
-        const qrContainer = document.getElementById('quickReplies');
-        if(qrContainer) qrContainer.innerHTML = ''; // clear chips
-        
-        setTimeout(() => processAiLogic(text), 1200);
     }
 
     function addAiMessage(text, chips = []) {
@@ -154,73 +318,61 @@ document.addEventListener('DOMContentLoaded', () => {
         item.querySelector('.field-icon').innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
     }
 
-    // Agent Logic Router
-    function processAiLogic(userText) {
-        const lowerText = userText.toLowerCase();
+    async function processAiLogic(userText) {
+        // Fallback for text input -> Send to DataChannel as user text item
+        if (dc && dc.readyState === "open") {
+             dc.send(JSON.stringify({
+                type: "conversation.item.create",
+                item: {
+                    type: "message",
+                    role: "user",
+                    content: [{ type: "input_text", text: userText }]
+                }
+            }));
+            dc.send(JSON.stringify({ type: "response.create" }));
+        } else {
+             addAiMessage("Bitte aktivieren Sie zuerst das Mikrofon für Echtzeit-Kommunikation.", []);
+        }
+    }
+
+    function updateDynamicProgress() {
+        // Calculate completion
+        let totalFields = Object.keys(projectState.fields).length;
+        let completedFields = Object.values(projectState.fields).filter(f => f.status === "green").length;
+        let percentage = Math.round((completedFields / totalFields) * 100);
         
-        if (conversationStep === 0) {
-            addAiMessage("Super. Bevorzugt die Telekom bei dieser Migration eher den Greenfield- (Neu-Implementierung) oder den Brownfield-Ansatz (System-Konvertierung)?", ['Greenfield', 'Brownfield', 'Das wissen wir noch nicht']);
-            conversationStep = 1;
-        } 
-        else if (conversationStep === 1) {
-            let approach = lowerText.includes('green') ? 'Greenfield' : 'Brownfield';
-            updateUIState('ansatz', approach);
-            setNextActiveField('system');
-            document.getElementById('completionBadge').innerText = '40% Erfasst';
-            
-            addAiMessage(`Verstanden, wir planen den ${approach}-Ansatz. Bestätigst du, dass die Migration konkret von SAP R/3 zu S/4HANA in eine Cloudumgebung stattfindet?`, ['Ja, R/3 zu S/4 in die AWS Cloud.', 'Nein, On-Premise.']);
-            conversationStep = 2;
-        }
-        else if (conversationStep === 2) {
-            updateUIState('system', 'SAP R/3 -> S/4HANA');
-            setNextActiveField('rules');
-            
-            // Simulate the Implicit Data Extraction (Agent infers multi-parameters from one phrase)
-            if (lowerText.includes('aws') || lowerText.includes('cloud')) {
-                setTimeout(() => {
-                    updateImplicitState('cloud');
-                    updateImplicitState('privacy');
-                    updateImplicitState('migration');
-                }, 400); // Slight delay to make it feel like an AI "aha" moment
+        const badge = document.getElementById('completionBadge');
+        if (badge) {
+            badge.innerText = `${percentage}% Erfasst`;
+            if (percentage === 100) {
+                badge.style.backgroundColor = '#d1fae5';
+                badge.style.color = '#059669';
+                badge.style.borderColor = '#10b981';
+                
+                // Unlock Phase 3
+                const lockedItem = document.querySelector('.locked');
+                if(lockedItem) {
+                    lockedItem.classList.remove('locked', 'status-gray');
+                    lockedItem.classList.add('status-green', 'pulse-green');
+                    lockedItem.querySelector('.field-icon').innerHTML = '<i class="fa-solid fa-check-double"></i>';
+                    lockedItem.querySelector('.field-value').innerText = 'Wird in Plan generiert';
+                    lockedItem.querySelector('.field-value').classList.remove('empty');
+                }
+                
+                // Enable Button
+                const btn = document.getElementById('generatePlanBtn');
+                if(btn) btn.disabled = false;
             }
-            
-            document.getElementById('completionBadge').innerText = '70% Erfasst';
-            
-            addAiMessage("Die Systeme sind eingeloggt. Da du die AWS Cloud erwähnt hast, habe ich im Hintergrund direkt 'Datenschutz', 'Cloud' und 'Migration' als relevant markiert! Letzte Frage: Gibt es spezielle Cutover-Sonderregeln, zum Beispiel einen Carve-Out oder Autosupplisten, die fachlich getrennt werden müssen?", ['Ja, Carve-Out', 'Ja, Autosupplisten', 'Beides']);
-            conversationStep = 3;
         }
-        else if (conversationStep === 3) {
-            updateUIState('rules', 'Zusätzlicher Carve-Out');
-            
-            const badge = document.getElementById('completionBadge');
-            badge.innerText = '100% Erfasst';
-            badge.style.backgroundColor = '#d1fae5';
-            badge.style.color = '#059669';
-            badge.style.borderColor = '#10b981';
-            
-            // Unlock Phase 3
-            const lockedItem = document.querySelector('.locked');
-            if(lockedItem) {
-                lockedItem.classList.remove('locked', 'status-gray');
-                lockedItem.classList.add('status-green', 'pulse-green');
-                lockedItem.querySelector('.field-icon').innerHTML = '<i class="fa-solid fa-check-double"></i>';
-                lockedItem.querySelector('.field-value').innerText = 'Wird in Plan generiert';
-                lockedItem.querySelector('.field-value').classList.remove('empty');
+
+        // Auto-focus next yellow field if not all are green
+        Object.keys(projectState.fields).forEach(key => {
+            if (projectState.fields[key].status === "gray") {
+                // Find first gray and make it yellow
+                setNextActiveField(key);
+                return; 
             }
-            
-            // Enable Button
-            const btn = document.getElementById('generatePlanBtn');
-            if(btn) btn.disabled = false;
-            
-            addAiMessage("Perfekt. Der Datensatz ist vollständig. Basierend darauf habe ich interne Quality Gates wie die 'Setup-Karte Obermigration' freigeschaltet. Soll ich den JSON Payload speichern und den Projektplan erzeugen?", ['Ja, Plan erzeugen']);
-            conversationStep = 4;
-        }
-        else if (conversationStep === 4) {
-            console.log("FINAL JSON PAYLOAD:", JSON.stringify(projectState, null, 2));
-            addAiMessage("Der saubere JSON-Datensatz wurde über MCP_Write an die Persistenzschicht übergeben. Der Projektplan wird initialisiert. Bis zum nächsten Mal!");
-            const btn = document.getElementById('generatePlanBtn');
-            if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Erzeuge Plan...';
-        }
+        });
     }
 
     // Event Listeners

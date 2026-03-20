@@ -302,7 +302,14 @@ section {
     transition: all 0.2s;
 }
 .btn-voice { background: white; color: var(--text-muted); }
-.btn-voice.active { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
+.btn-voice.active, .btn-voice.live { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
+.btn-voice.pulse { background: #fef3c7; color: #d97706; border-color: #fde68a; animation: pulse-btn 1.5s infinite; }
+
+@keyframes pulse-btn {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
 .btn-send { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
 .btn-send:hover { background: var(--accent-primary-hover); }
 
