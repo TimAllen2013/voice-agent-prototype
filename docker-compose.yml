@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # ─── App Server ──────────────────────────────────────────────
   zeemless-voice-agent:
     build: .
     ports:
@@ -9,3 +10,27 @@ services:
       - .env
     environment:
       - PORT=3000
+      - DATABASE_URL=postgresql://voiceagent:voiceagent@postgres:5432/voiceagent
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─── PostgreSQL (lokale Entwicklung) ─────────────────────────
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: voiceagent
+      POSTGRES_USER: voiceagent
+      POSTGRES_PASSWORD: voiceagent
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voiceagent -d voiceagent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

@@ -1,3 +1,21 @@
+# ─── OTC Authentifizierung ────────────────────────────────────
+variable "otc_username" {
+  description = "OTC IAM Benutzername"
+  type        = string
+}
+
+variable "otc_password" {
+  description = "OTC IAM Passwort"
+  type        = string
+  sensitive   = true
+}
+
+variable "otc_domain_name" {
+  description = "OTC Domain Name (z.B. OTC00000000001000171973)"
+  type        = string
+}
+
+# ─── Azure OpenAI ─────────────────────────────────────────────
 variable "azure_openai_api_key" {
   description = "API Key für Azure OpenAI"
   type        = string
@@ -14,26 +32,83 @@ variable "azure_openai_deployment_name" {
   type        = string
 }
 
-variable "vpc_name" {
-  description = "Name der bereitzustellenden VPC in der OTC"
+variable "azure_openai_realtime_deployment" {
+  description = "Deployment-Name für das Azure OpenAI Realtime Modell"
   type        = string
-  default     = "vpc-zeemless-voice"
+  default     = "gpt-realtime-15"
+}
+
+# ─── App Auth ─────────────────────────────────────────────────
+variable "auth_username" {
+  description = "Basic Auth Benutzername"
+  type        = string
+  default     = "admin"
+}
+
+variable "auth_password" {
+  description = "Basic Auth Passwort"
+  type        = string
+  sensitive   = true
+  default     = "prototype2026"
+}
+
+variable "github_pat" {
+  description = "GitHub Personal Access Token für Repository-Zugriff"
+  type        = string
+  sensitive   = true
+}
+
+# ─── Infrastruktur ────────────────────────────────────────────
+variable "vpc_name" {
+  description = "Name der VPC"
+  type        = string
+  default     = "zl-vpc"
 }
 
 variable "subnet_name" {
-  description = "Name des bereitzustellenden Subnets in der OTC"
+  description = "Name des Subnets"
   type        = string
-  default     = "subnet-zeemless-voice"
+  default     = "zl-subnet"
 }
 
 variable "flavor_id" {
-  description = "ECS Flavor (Instanztyp) für den Docker-Host in der OTC"
+  description = "ECS Flavor für den App-Server"
   type        = string
-  default     = "s3.large.2" 
+  default     = "s3.medium.2"
 }
 
-variable "image_name" {
-  description = "Docker Image, das auf der ECS gestartet werden soll"
+variable "availability_zone" {
+  description = "OTC Availability Zone"
   type        = string
-  default     = "deine-registry/zeemless-voice-agent:latest"
+  default     = "eu-de-01"
+}
+
+# ─── Datenbank ────────────────────────────────────────────────
+variable "db_password" {
+  description = "PostgreSQL root Passwort (min. 8 Zeichen, Groß/Klein/Zahl/Sonderzeichen)"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_flavor" {
+  description = "RDS Flavor für PostgreSQL (2 vCPU, 4GB RAM)"
+  type        = string
+  default     = "rds.pg.x1.large.2"
+}
+
+variable "db_volume_size" {
+  description = "Größe der Datenbank-Festplatte in GB"
+  type        = number
+  default     = 40
+}
+
+# ─── Tags für Kostentrennung ──────────────────────────────────
+variable "tags" {
+  description = "Tags für die getrennte Abrechnung in der OTC"
+  type        = map(string)
+  default = {
+    Project     = "ZeemlessLabs-VoiceAgent"
+    Environment = "Dev"
+    CostCenter  = "ZeemlessLabs"
+  }
 }
