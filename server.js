@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
 
 dotenv.config();
 
@@ -15,8 +14,6 @@ const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
 const azureApiKey = process.env.AZURE_OPENAI_API_KEY;
 const deploymentId = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
 const realtimeDeployment = process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT || 'gpt-realtime-15';
-
-const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
 
 // ──────────────────────────────────────────────────────────────
 // Realtime Token Endpoint – mints an ephemeral key for WebRTC
@@ -95,10 +92,28 @@ Be professional and pro-active.
             ...messages
         ];
 
-        const result = await client.getChatCompletions(deploymentId, chatMessages, {
-            responseFormat: { type: "json_object" }
+        const baseUrl = endpoint.replace(/\/+$/, '');
+        const chatUrl = `${baseUrl}/openai/deployments/${deploymentId}/chat/completions?api-version=2024-06-01`;
+
+        const chatResponse = await fetch(chatUrl, {
+            method: 'POST',
+            headers: {
+                'api-key': azureApiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                messages: chatMessages,
+                response_format: { type: "json_object" }
+            })
         });
 
+        if (!chatResponse.ok) {
+            const errText = await chatResponse.text();
+            console.error('Chat API error:', chatResponse.status, errText);
+            return res.status(chatResponse.status).json({ error: errText });
+        }
+
+        const result = await chatResponse.json();
         const responseContent = JSON.parse(result.choices[0].message.content);
         res.json(responseContent);
 
