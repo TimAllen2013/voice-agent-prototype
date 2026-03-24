@@ -9,6 +9,23 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// ── Basic Auth ──────────────────────────────────────────────
+const authUser = process.env.AUTH_USERNAME || 'admin';
+const authPass = process.env.AUTH_PASSWORD || 'prototype2026';
+
+app.use((req, res, next) => {
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith('Basic ')) {
+        res.set('WWW-Authenticate', 'Basic realm="ZEEMLESS Voice Agent"');
+        return res.status(401).send('Authentifizierung erforderlich');
+    }
+    const [user, pass] = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
+    if (user === authUser && pass === authPass) return next();
+    res.set('WWW-Authenticate', 'Basic realm="ZEEMLESS Voice Agent"');
+    res.status(401).send('Ungültige Zugangsdaten');
+});
+
 app.use(express.static(__dirname, { index: 'start.html' }));
 
 const PORT = process.env.PORT || 3000;
