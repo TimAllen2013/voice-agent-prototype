@@ -38,16 +38,9 @@
                 </div>
 
                 <div class="chat-history" id="chatHistory">
-                    
-                    <!-- Context Loaded Notification -->
+                    <!-- Context + initial message injected by app.js -->
                     <div class="context-tag-wrapper">
-                        <span class="context-tag"><i class="fa-solid fa-database"></i> Externer Kontext für 'Deutsche Telekom' geladen (Telco, SAP ERP, 200k+ MA)</span>
-                    </div>
-
-                    <div class="message ai-message">
-                        <div class="message-content">
-                            Hallo! Ich sehe, wir legen ein Projekt für die Deutsche Telekom an. Sollen wir direkt mit den spezifischen ERP-Parametern starten?
-                        </div>
+                        <span class="context-tag"><i class="fa-solid fa-spinner fa-spin"></i> Lade externen Kontext...</span>
                     </div>
                 </div>
 
@@ -93,7 +86,7 @@
                                 <div class="field-icon"><i class="fa-solid fa-check"></i></div>
                                 <div class="field-info">
                                     <span class="field-label">Mandant</span>
-                                    <span class="field-value">Deutsche Telekom AG</span>
+                                    <span class="field-value" id="client-name-display">Deutsche Telekom AG</span>
                                 </div>
                             </div>
                         </div>

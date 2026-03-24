@@ -9,8 +9,8 @@ RUN npm install --production
 # Copy application files
 COPY . .
 
-# Expose backend port
-EXPOSE 3000
+# Expose backend ports (HTTP + HTTPS for WebRTC)
+EXPOSE 3000 3443
 
 # Start server
 CMD ["node", "server.js"]
