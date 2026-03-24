@@ -17,12 +17,13 @@ const realtimeDeployment = process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT || 'gpt-
 
 // ──────────────────────────────────────────────────────────────
 // Realtime Token Endpoint – mints an ephemeral key for WebRTC
+// Uses GA protocol: /openai/v1/realtime/client_secrets
+// Docs: https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/realtime-audio-webrtc
 // ──────────────────────────────────────────────────────────────
 app.get('/api/realtime/token', async (req, res) => {
     try {
-        // Build the Azure OpenAI REST URL for ephemeral token
         const baseUrl = endpoint.replace(/\/+$/, '');
-        const tokenUrl = `${baseUrl}/openai/v1/realtime/sessions?api-version=2025-04-01-preview`;
+        const tokenUrl = `${baseUrl}/openai/v1/realtime/client_secrets`;
 
         const tokenResponse = await fetch(tokenUrl, {
             method: 'POST',
@@ -31,8 +32,14 @@ app.get('/api/realtime/token', async (req, res) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: realtimeDeployment,
-                voice: 'alloy'
+                session: {
+                    type: 'realtime',
+                    model: realtimeDeployment,
+                    instructions: 'You are the ZEEMLESS Voice Initiation Agent for SAP ERP Cutover projects.',
+                    audio: {
+                        output: { voice: 'alloy' }
+                    }
+                }
             })
         });
 
@@ -46,7 +53,7 @@ app.get('/api/realtime/token', async (req, res) => {
 
         // Return token + connection info to the client
         res.json({
-            token: tokenData.client_secret?.value || tokenData.client_secret,
+            token: tokenData.value || tokenData.client_secret?.value || tokenData.client_secret,
             endpoint: baseUrl,
             deployment: realtimeDeployment,
             expiresAt: tokenData.expires_at

@@ -111,7 +111,7 @@ resource "opentelekomcloud_rds_instance_v3" "postgres" {
 # ─── SSH Keypair ───────────────────────────────────────────────
 resource "opentelekomcloud_compute_keypair_v2" "my_keypair" {
   name       = "zl-keypair"
-  public_key = file("C:/Users/tobia/.ssh/id_ed25519.pub")
+  public_key = file("C:/Users/tobias.meilke/.ssh/id_ed25519.pub")
 }
 
 # ─── Ubuntu Image ─────────────────────────────────────────────

@@ -148,15 +148,15 @@ Available fields:
             ms.getTracks().forEach(track => pc.addTrack(track, ms));
 
             // 5. Connect to Azure OpenAI Realtime Endpoint via WebRTC SDP Offer/Answer
+            // GA protocol: /openai/v1/realtime/calls
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
 
-            // Using api-version=2025-04-01-preview for WebRTC SDP endpoint on Azure
-            const sdpResponse = await fetch(`${baseUrl}/openai/v1/realtime?api-version=2025-04-01-preview&deployment=${data.deployment}`, {
+            const sdpResponse = await fetch(`${baseUrl}/openai/v1/realtime/calls`, {
                 method: "POST",
                 body: offer.sdp,
                 headers: {
-                    "Authorization": `Bearer ${EPHEMERAL_KEY}`, // Using token we got from backend
+                    "Authorization": `Bearer ${EPHEMERAL_KEY}`,
                     "Content-Type": "application/sdp"
                 }
             });
