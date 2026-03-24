@@ -1,12 +1,12 @@
-# Seamless Labs Voice Agent Redesign
+# ZEEMLESS Voice Agent Redesign
 
-Redesigning the dark-mode PM Voice Agent into a bright, modern "Seamless Labs" web app layout, transitioning the use case to complex SAP ERP migrations for clients like Deutsche Telekom.
+Redesigning the dark-mode PM Voice Agent into a bright, modern "ZEEMLESS" web app layout, transitioning the use case to complex SAP ERP migrations for clients like Deutsche Telekom.
 
 ## Proposed Changes
 
 ### UI & Branding
 - **Landing Page (`start.html`)**: A new entry page simulating the main PM application. Shows a client selector (Deutsche Telekom, Bundesagentur für Arbeit) and a "Create Project" action leading to either manual input or "Voice Agent (QR / Web)".
-- **Color Scheme (`style.css`)**: Shift from dark mode (`#0f172a`) to a bright, clean, corporate look with plenty of white space, subtle shadows, and a strong primary accent color matching "Seamless Labs" aesthetics.
+- **Color Scheme (`style.css`)**: Shift from dark mode (`#0f172a`) to a bright, clean, corporate look with plenty of white space, subtle shadows, and a strong primary accent color matching "ZEEMLESS" aesthetics.
 
 ### Agent Logic & Data Context separation
 The agent needs more context than just "Company Name". It helps significantly if the AI has context *before* asking questions.
@@ -31,7 +31,7 @@ We will simulate this by:
 ### Code Adjustments
 
 #### [NEW] start.html (file:///c:/Softwareprojekte/Product%20Manager/voice-agent-prototype/start.html)
-- Main seamless lab dashboard.
+- Main ZEEMLESS dashboard.
 
 #### [MODIFY] index.html (file:///c:/Softwareprojekte/Product%20Manager/voice-agent-prototype/index.html)
 - Add specific fields for ERP: "System Landscape", "Approach (Greenfield/Brownfield)", "Migration Rules", and a new "Implicit Data Checklist" (Cloud, Privacy, Data Migration).
