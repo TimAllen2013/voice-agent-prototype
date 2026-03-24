@@ -52,6 +52,16 @@ resource "opentelekomcloud_networking_secgroup_rule_v2" "rule_3000" {
   security_group_id = opentelekomcloud_networking_secgroup_v2.sg_app.id
 }
 
+resource "opentelekomcloud_networking_secgroup_rule_v2" "rule_3443" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = 3443
+  port_range_max    = 3443
+  remote_ip_prefix  = "0.0.0.0/0"
+  security_group_id = opentelekomcloud_networking_secgroup_v2.sg_app.id
+}
+
 resource "opentelekomcloud_networking_secgroup_rule_v2" "rule_22" {
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -106,6 +116,11 @@ resource "opentelekomcloud_rds_instance_v3" "postgres" {
   }
 
   tags = var.tags
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [db[0].password, availability_zone]
+  }
 }
 
 # ─── SSH Keypair ───────────────────────────────────────────────
@@ -169,6 +184,14 @@ resource "opentelekomcloud_compute_instance_v2" "app" {
               systemctl start docker
               systemctl enable docker
 
+              # Self-signed TLS certificate for WebRTC (getUserMedia requires HTTPS)
+              mkdir -p /opt/ssl
+              openssl req -x509 -newkey rsa:2048 \
+                -keyout /opt/ssl/server-key.pem \
+                -out /opt/ssl/server.pem \
+                -days 365 -nodes \
+                -subj "/CN=164.30.13.130"
+
               # Repository klonen
               git clone https://${var.github_pat}@github.com/TimAllen2013/voice-agent-prototype.git /opt/voice-agent
               cd /opt/voice-agent
@@ -176,8 +199,9 @@ resource "opentelekomcloud_compute_instance_v2" "app" {
               # Docker Image bauen
               docker build -t zl-voice .
 
-              # Container starten MIT Datenbank-Verbindung
-              docker run -d -p 3000:3000 \
+              # Container starten MIT Datenbank-Verbindung + HTTPS
+              docker run -d -p 3000:3000 -p 3443:3443 \
+                -v /opt/ssl:/etc/ssl/private:ro \
                 -e AZURE_OPENAI_API_KEY="${var.azure_openai_api_key}" \
                 -e AZURE_OPENAI_ENDPOINT="${var.azure_openai_endpoint}" \
                 -e AZURE_OPENAI_DEPLOYMENT_NAME="${var.azure_openai_deployment_name}" \
@@ -186,6 +210,9 @@ resource "opentelekomcloud_compute_instance_v2" "app" {
                 -e AUTH_USERNAME="${var.auth_username}" \
                 -e AUTH_PASSWORD="${var.auth_password}" \
                 -e PORT=3000 \
+                -e HTTPS_PORT=3443 \
+                -e TLS_CERT=/etc/ssl/private/server.pem \
+                -e TLS_KEY=/etc/ssl/private/server-key.pem \
                 --restart always \
                 --name zl-voice \
                 zl-voice

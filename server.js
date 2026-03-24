@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const https = require('https');
 
 dotenv.config();
 
@@ -130,6 +132,21 @@ Be professional and pro-active.
     }
 });
 
+// HTTPS for WebRTC (getUserMedia requires secure context)
+const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
+const certPath = process.env.TLS_CERT || '/etc/ssl/certs/server.pem';
+const keyPath = process.env.TLS_KEY || '/etc/ssl/private/server-key.pem';
+
+if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    const httpsServer = https.createServer({
+        cert: fs.readFileSync(certPath),
+        key: fs.readFileSync(keyPath)
+    }, app);
+    httpsServer.listen(HTTPS_PORT, () => {
+        console.log(`ZEEMLESS Backend (HTTPS) running on https://localhost:${HTTPS_PORT}`);
+    });
+}
+
 app.listen(PORT, () => {
-    console.log(`ZEEMLESS Backend running on http://localhost:${PORT}`);
+    console.log(`ZEEMLESS Backend (HTTP) running on http://localhost:${PORT}`);
 });
